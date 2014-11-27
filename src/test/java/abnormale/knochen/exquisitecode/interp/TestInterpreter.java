@@ -1,4 +1,4 @@
-package abnormale.knochen.exquisitecode;
+package abnormale.knochen.exquisitecode.interp;
 
 import org.junit.Assert;
 import org.junit.Test;

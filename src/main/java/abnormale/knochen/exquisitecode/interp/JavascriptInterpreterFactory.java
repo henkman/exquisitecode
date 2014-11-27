@@ -1,4 +1,4 @@
-package abnormale.knochen.exquisitecode;
+package abnormale.knochen.exquisitecode.interp;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;

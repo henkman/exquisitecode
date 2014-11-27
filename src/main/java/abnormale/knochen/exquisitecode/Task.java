@@ -1,31 +1,35 @@
 package abnormale.knochen.exquisitecode;
 
 public class Task {
-	private String name;
-	private String description;
-	private String solution;
+    private String name;
+    private String description;
+    private String solution;
 
-	public String getName() {
-		return name;
-	}
+    public boolean isSolution(String solution) {
+        return this.solution == solution;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	public String getSolution() {
-		return solution;
-	}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-	public void setSolution(String solution) {
-		this.solution = solution;
-	}
+    public String getSolution() {
+        return solution;
+    }
+
+    public void setSolution(String solution) {
+        this.solution = solution;
+    }
 }

@@ -3,27 +3,24 @@ package abnormale.knochen.exquisitecode;
 import abnormale.knochen.exquisitecode.interp.Interpreter;
 
 public class Game {
-	private Interpreter interpreter;
-	private StringBuilder code;
-	private Task task;
+    private Interpreter interpreter;
+    private Task task;
+    private String code;
+    private String result;
 
-	public Game(Interpreter interpreter, Task task) {
-		this.interpreter = interpreter;
-		this.code = new StringBuilder();
-		this.task = task;
-	}
+    public Game(Interpreter interpreter, Task task) {
+        this.interpreter = interpreter;
+        this.code = "var result = '';\n";
+        this.task = task;
+    }
 
-	public void checkLineValid(String line) {
-		// TODO: strip line from comments
-		// TODO: disallow lines with too long variable and function names
-	}
+    public void addLine(String line) throws Exception {
+        String ccode = code + interpreter.fixLine(line) + '\n';
+        result = interpreter.execute(ccode);
+        code = ccode;
+    }
 
-	public void addLine(String line) {
-		code.append(line);
-		code.append('\n');
-	}
-
-	public boolean isSolved() {
-		return task.getSolution() == "";
-	}
+    public boolean isSolved() {
+        return task.isSolution(result);
+    }
 }

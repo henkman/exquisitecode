@@ -23,7 +23,7 @@ public class Interpreter {
         ctx.setErrorWriter(err);
         engine.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
         engine.eval(code);
-        return (String) engine.get("result");
+        return String.valueOf(engine.get("result"));
     }
 
     public String fixLine(String line) {

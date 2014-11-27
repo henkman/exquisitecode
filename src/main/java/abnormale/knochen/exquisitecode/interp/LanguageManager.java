@@ -1,20 +1,17 @@
 package abnormale.knochen.exquisitecode.interp;
 
 
-import java.util.HashMap;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 public class LanguageManager {
-	protected static final HashMap<String, InterpreterFactory> languages;
-	static {
-		languages = new HashMap<String, InterpreterFactory>();
-		languages.put(JavascriptInterpreter.name, new JavascriptInterpreterFactory());
-	}
+    private static ScriptEngineManager scriptFactory = new ScriptEngineManager();
 
-	public static Interpreter getInterpreter(String name) {
-		InterpreterFactory<Interpreter> ifa = languages.get(name);
-		if(ifa == null) {
-			return null;
-		}
-		return ifa.getInterpreter();
-	}
+    public static Interpreter getInterpreter(String name) throws Exception {
+        ScriptEngine engine = scriptFactory.getEngineByName(name);
+        if (engine == null) {
+            throw new Exception("scriptengine " + name + " does not exist");
+        }
+        return new Interpreter(engine);
+    }
 }

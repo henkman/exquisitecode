@@ -39,7 +39,7 @@ public class Exquisite implements SparkApplication {
 
 
         post("/addline", (req, res) -> {
-            // TODO: this function should be an ajax request
+            // TODO: this should be in a websocket (https://github.com/TooTallNate/Java-WebSocket)
 
             String line = req.queryParams("line");
             if (line == null) {
@@ -51,8 +51,10 @@ public class Exquisite implements SparkApplication {
                 game.addLine(line);
             } catch (ScriptException e) {
                 model.put("error", e.getMessage());
-            } catch (Exception e) {
-                halt("wat: " + e.getMessage());
+            } catch(InterruptedException e) {
+                model.put("error", "code took too long to run");
+            } catch(Exception e) {
+                model.put("error", e.getMessage());
             }
             return new ModelAndView(model, "tmpl/index.tmpl");
         }, templateEngine);

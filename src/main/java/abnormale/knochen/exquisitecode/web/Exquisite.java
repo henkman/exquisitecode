@@ -10,6 +10,7 @@ import spark.servlet.SparkApplication;
 import spark.template.velocity.VelocityTemplateEngine;
 
 import javax.script.ScriptException;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +23,8 @@ public class Exquisite implements SparkApplication {
     public Exquisite() throws Exception {
         Task task = new Task("name", "description", "solution");
         Interpreter interp = InterpreterManager.getInterpreter("JavaScript");
-        game = new Game(interp, task);
+        InetSocketAddress serverAddress = new InetSocketAddress(4568);
+        game = new Game(serverAddress, interp, task);
     }
 
     @Override

@@ -1,10 +1,16 @@
 package abnormale.knochen.exquisitecode.game;
 
 import abnormale.knochen.exquisitecode.interp.Interpreter;
+import org.java_websocket.WebSocket;
+import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.server.WebSocketServer;
 
 import javax.script.ScriptException;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.Collection;
 
-public class Game {
+public class Game extends WebSocketServer {
     private Interpreter interpreter;
     private Task task;
     private String code;
@@ -12,12 +18,38 @@ public class Game {
     private int maxLineLength;
     private int maxExecutionTimeMs;
 
-    public Game(Interpreter interpreter, Task task) {
+    public Game(InetSocketAddress address, Interpreter interpreter, Task task) throws UnknownHostException {
+        super(address);
         this.interpreter = interpreter;
         this.code = "var result = '';\n";
         this.task = task;
         this.maxLineLength = 150;
         this.maxExecutionTimeMs = 5000;
+    }
+
+    @Override
+    public void onOpen(org.java_websocket.WebSocket webSocket, ClientHandshake clientHandshake) {
+
+    }
+
+    @Override
+    public void onClose(org.java_websocket.WebSocket webSocket, int i, String s, boolean b) {
+
+    }
+
+    @Override
+    public void onMessage(org.java_websocket.WebSocket webSocket, String s) {
+        try {
+            addLine(s);
+            //TODO: send message with following information:    code, result, error, isSolved
+        } catch (Exception e) {
+            //TODO: send error message
+        }
+    }
+
+    @Override
+    public void onError(org.java_websocket.WebSocket webSocket, Exception e) {
+
     }
 
     private class ScriptExecutor implements Runnable {
@@ -71,5 +103,14 @@ public class Game {
 
     public Task getTask() {
         return task;
+    }
+
+    public void sendToAll(String message) {
+        Collection<WebSocket> currentConnections = connections();
+        synchronized (currentConnections) {
+            for (org.java_websocket.WebSocket socket : currentConnections) {
+                socket.send(message);
+            }
+        }
     }
 }

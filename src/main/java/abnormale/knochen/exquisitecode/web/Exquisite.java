@@ -11,6 +11,7 @@ import spark.template.velocity.VelocityTemplateEngine;
 
 import javax.script.ScriptException;
 import java.net.InetSocketAddress;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +30,16 @@ public class Exquisite implements SparkApplication {
 
     @Override
     public void init() {
+        try {
+            Db.init();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+
         // TODO: add html escaping tool
         TemplateEngine templateEngine = new VelocityTemplateEngine();
 

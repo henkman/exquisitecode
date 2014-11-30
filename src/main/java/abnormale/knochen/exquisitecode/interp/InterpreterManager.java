@@ -16,14 +16,14 @@ public class InterpreterManager {
         validators.put("JavaScript", new JavaScriptValidator());
     }
 
-    public static Interpreter getInterpreter(String name) throws Exception {
+    public static Interpreter getInterpreter(String name) throws InterpreterException {
         ScriptEngine engine = scriptFactory.getEngineByName(name);
         if (engine == null) {
-            throw new Exception("scriptengine " + name + " does not exist");
+            throw new InterpreterException("scriptengine " + name + " does not exist");
         }
         Validator val = validators.get(name);
         if (val == null) {
-            throw new Exception("validator " + name + " does not exist");
+            throw new InterpreterException("validator " + name + " does not exist");
         }
         return new Interpreter(engine, val);
     }

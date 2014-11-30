@@ -1,6 +1,6 @@
 package abnormale.knochen.exquisitecode.web;
 
-import abnormale.knochen.exquisitecode.game.Game;
+import abnormale.knochen.exquisitecode.game.Player;
 import abnormale.knochen.exquisitecode.game.Task;
 import abnormale.knochen.exquisitecode.interp.Interpreter;
 import abnormale.knochen.exquisitecode.interp.InterpreterManager;
@@ -19,13 +19,14 @@ import static spark.Spark.*;
 
 public class Exquisite implements SparkApplication {
 
-    private Game game;
+    private WebSocketGame game;
 
     public Exquisite() throws Exception {
         Task task = new Task("name", "description", "solution");
         Interpreter interp = InterpreterManager.getInterpreter("JavaScript");
         InetSocketAddress serverAddress = new InetSocketAddress(4568);
-        game = new Game(serverAddress, interp, task);
+        Player master = new Player(0, "Gurke");
+        game = new WebSocketGame(serverAddress, interp, task, master);
     }
 
     @Override
@@ -64,9 +65,9 @@ public class Exquisite implements SparkApplication {
                 game.addLine(line);
             } catch (ScriptException e) {
                 model.put("error", e.getMessage());
-            } catch(InterruptedException e) {
+            } catch (InterruptedException e) {
                 model.put("error", "code took too long to run");
-            } catch(Exception e) {
+            } catch (Exception e) {
                 model.put("error", e.getMessage());
             }
             return new ModelAndView(model, "tmpl/index.tmpl");

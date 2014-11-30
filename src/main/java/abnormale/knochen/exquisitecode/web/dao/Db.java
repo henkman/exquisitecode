@@ -1,4 +1,4 @@
-package abnormale.knochen.exquisitecode.web;
+package abnormale.knochen.exquisitecode.web.dao;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

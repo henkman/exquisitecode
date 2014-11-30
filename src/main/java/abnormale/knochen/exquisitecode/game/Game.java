@@ -53,6 +53,10 @@ public class Game {
         state = State.RUNNING;
     }
 
+    protected void stop() {
+        state = State.OVER;
+    }
+
     /**
      * Use this when a Player joins the game when waiting for players
      */
@@ -73,13 +77,12 @@ public class Game {
         }
         int ns = players.size() - 1;
         if (ns < 2) {
-            state = State.OVER;
+            stop();
         } else if (isCurrent(p)) {
             nextPlayer();
         } else if (isMaster(p)) {
             // TODO: maybe promote somebody else to master
-            master = null;
-            state = State.OVER;
+            stop();
         }
         players.remove(p);
     }
@@ -142,7 +145,7 @@ public class Game {
         }
         checkAddLine(line);
         if (isSolved()) {
-            state = State.OVER;
+            stop();
             return true;
         }
         nextPlayer();

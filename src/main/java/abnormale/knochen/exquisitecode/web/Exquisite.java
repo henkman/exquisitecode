@@ -9,7 +9,6 @@ import spark.TemplateEngine;
 import spark.servlet.SparkApplication;
 import spark.template.velocity.VelocityTemplateEngine;
 
-import javax.script.ScriptException;
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -48,29 +47,7 @@ public class Exquisite implements SparkApplication {
         get("/", (req, res) -> {
             Map<String, Object> model = new HashMap<>();
             model.put("game", game);
-            return new ModelAndView(model, "tmpl/index.tmpl");
-        }, templateEngine);
-
-
-        post("/addline", (req, res) -> {
-            // TODO: this should be in a websocket (https://github.com/TooTallNate/Java-WebSocket)
-
-            String line = req.queryParams("line");
-            if (line == null) {
-                halt("line is null");
-            }
-            Map<String, Object> model = new HashMap<>();
-            model.put("game", game);
-            try {
-                game.addLine(line);
-            } catch (ScriptException e) {
-                model.put("error", e.getMessage());
-            } catch (InterruptedException e) {
-                model.put("error", "code took too long to run");
-            } catch (Exception e) {
-                model.put("error", e.getMessage());
-            }
-            return new ModelAndView(model, "tmpl/index.tmpl");
+            return new ModelAndView(model, "tmpl/index.html");
         }, templateEngine);
 
         exception(Exception.class, (e, request, response) -> {

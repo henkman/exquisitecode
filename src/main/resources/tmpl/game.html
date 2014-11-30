@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Exquisite Code</title>
+	<link rel="stylesheet" href="/x.css"/>
+	<script type="text/javascript">
+		WEB_SOCKET_FORCE_FLASH = false;
+		WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
+	</script>
+	<script type="text/javascript" src="swfobject.js"></script>
+	<script type="text/javascript" src="web_socket.js"></script>
+	<script type="text/javascript" src="game.js"></script>
+</head>
+<body>
+<div>
+	<div>
+		<p>Task:</p>
+
+		<p>Name: $game.task.name</p>
+
+		<p>Desc: $game.task.description</p>
+
+		<p>Solved: $game.solved</p>
+	</div>
+	<div>
+		<p>Code:</p>
+		<pre>$game.code</pre>
+		<form action="/addline" method="post">
+			<label for="line"/><input type="text" id="line" name="line" maxlength="150" size="150"
+									  autofocus="autofocus">
+		</form>
+
+		#if($error)
+		<pre class="error">$error</pre>
+		#end
+	</div>
+	#if($game.result)
+	<div>
+		<p>Result:</p>
+		<pre>$game.result</pre>
+	</div>
+	#end
+</div>
+</body>
+</html>

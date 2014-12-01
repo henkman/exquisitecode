@@ -25,7 +25,7 @@ public class TestGame {
         player2 = new Player(1, "Baguette");
         player3 = new Player(2, "Fred");
         interp = InterpreterManager.getInterpreter("JavaScript");
-        task = new Task("", "", "foo");
+        task = new Task(0, "", "", "foo");
     }
 
     @Test

@@ -48,7 +48,7 @@ public class Exquisite implements SparkApplication {
             if (name == null || password == null) {
                 halt(401);
             }
-            Player player = PlayerDao.getPlayerByNameAndPassword(name, password);
+            Player player = PlayerDao.getByNameAndPassword(name, password);
             if (player == null) {
                 halt(401);
             }

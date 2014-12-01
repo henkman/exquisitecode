@@ -1,11 +1,13 @@
 package abnormale.knochen.exquisitecode.game;
 
 public class Task {
+    private int id;
     private String name;
     private String description;
     private String solution;
 
-    public Task(String name, String description, String solution) {
+    public Task(int id, String name, String description, String solution) {
+        this.id = id;
         this.name = name;
         this.description = description;
         this.solution = solution;
@@ -21,5 +23,9 @@ public class Task {
 
     public String getDescription() {
         return description;
+    }
+
+    public int getId() {
+        return id;
     }
 }

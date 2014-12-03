@@ -6,10 +6,17 @@
 	<script type="text/javascript">
 		WEB_SOCKET_FORCE_FLASH = false;
 		WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
+
+
 	</script>
-	<script type="text/javascript" src="swfobject.js"></script>
-	<script type="text/javascript" src="web_socket.js"></script>
-	<script type="text/javascript" src="game.js"></script>
+	<script type="text/javascript" src="/swfobject.js"></script>
+	<script type="text/javascript" src="/web_socket.js"></script>
+	<script type="text/javascript" src="/game.js"></script>
+	<script type="text/javascript">
+		var game = new Game($game.port);
+
+
+	</script>
 </head>
 <body>
 <div>

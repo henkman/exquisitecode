@@ -8,6 +8,9 @@ import java.sql.SQLException;
 /*
     to edit the db use
     $ java -cp hsqldb-2.3.2.jar org.hsqldb.util.DatabaseManager
+
+    SET WRITE_DELAY 0
+    should always be in exquisite.script
  */
 public class Db {
     private static Connection conn;
@@ -15,6 +18,7 @@ public class Db {
     public static void init() throws ClassNotFoundException, SQLException {
         Class.forName("org.hsqldb.jdbc.JDBCDriver");
         conn = DriverManager.getConnection("jdbc:hsqldb:file:db/exquisite", "SA", "");
+        conn.setAutoCommit(true);
     }
 
     public static PreparedStatement prepareStatement(String sql) throws SQLException {

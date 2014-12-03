@@ -15,15 +15,16 @@ public class TestPlayerDao {
 
     @Test
     public void testGetPlayer() {
-        Player p = PlayerDao.create("john", "john");
+        Player p = PlayerDao.create("bob", "bob");
         Assert.assertNotNull(p);
-        Assert.assertEquals("john", p.getName());
+        Assert.assertEquals("bob", p.getName());
         int id = p.getId();
-        Player pg = PlayerDao.getByNameAndPassword("john", "john");
+        Player pg = PlayerDao.getByNameAndPassword("bob", "bob");
         Assert.assertNotNull(pg);
         Assert.assertEquals(id, pg.getId());
         PlayerDao.deleteById(id);
-        p = PlayerDao.getByName("john");
+        p = PlayerDao.getByName("bob");
         Assert.assertNull(p);
     }
+
 }

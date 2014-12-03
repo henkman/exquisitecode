@@ -176,6 +176,15 @@ public class Game {
         return state == State.OVER;
     }
 
+    public boolean isMember(Player player) {
+        for (Player p : players) {
+            if (p.getId() == player.getId()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Player getCurrent() {
         return current;
     }

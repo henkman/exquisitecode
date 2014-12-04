@@ -69,7 +69,7 @@ public class Exquisite implements SparkApplication {
         tokenRegister = new TokenRegister(SESSION_SECONDS_FRESH);
         tokenRegister.start();
 
-        // TODO: add html escaping tool
+        // TODO: add html escaping tool or maybe use a different engine hat has it already? (http://www.mitchellbosecke.com/pebble/home)
         TemplateEngine templateEngine = new VelocityTemplateEngine();
 
         staticFileLocation("/res");

@@ -3,6 +3,7 @@ package abnormale.knochen.exquisitecode.game;
 import abnormale.knochen.exquisitecode.interp.Interpreter;
 import abnormale.knochen.exquisitecode.interp.InterpreterException;
 import abnormale.knochen.exquisitecode.interp.InterpreterManager;
+import abnormale.knochen.exquisitecode.web.Token;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -114,4 +115,12 @@ public class TestGame {
 
         }
     }
+
+    @Test
+    public void test() {
+        Token t = new Token(0, 0);
+        System.out.println(t);
+    }
+
 }
+

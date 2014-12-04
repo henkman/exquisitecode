@@ -5,10 +5,12 @@ import abnormale.knochen.exquisitecode.game.GameException;
 import abnormale.knochen.exquisitecode.game.Player;
 import abnormale.knochen.exquisitecode.game.Task;
 import abnormale.knochen.exquisitecode.interp.Interpreter;
-import abnormale.knochen.exquisitecode.web.messages.AddLineMessage;
-import abnormale.knochen.exquisitecode.web.messages.ErrorMessage;
-import abnormale.knochen.exquisitecode.web.messages.LoginMessage;
-import abnormale.knochen.exquisitecode.web.messages.Message;
+import abnormale.knochen.exquisitecode.web.messages.client.AddLineMessage;
+import abnormale.knochen.exquisitecode.web.messages.client.ClientMessage;
+import abnormale.knochen.exquisitecode.web.messages.client.ErrorMessage;
+import abnormale.knochen.exquisitecode.web.messages.client.LoginMessage;
+import abnormale.knochen.exquisitecode.web.messages.server.CodeAndResultMessage;
+import abnormale.knochen.exquisitecode.web.messages.server.PlayersMessage;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
@@ -29,8 +31,7 @@ public class WebSocketGame extends Game {
 
         @Override
         public void onOpen(WebSocket webSocket, ClientHandshake clientHandshake) {
-            System.out.println("ws:" + webSocket.getRemoteSocketAddress());
-
+            // TODO: try to get the token already here out of the session (clientHandshake.getFieldValue("COOKIE") -> JSESSIONID=blah)
             if (!isWaitingForPlayers()) {
                 webSocket.close();
                 return;
@@ -39,18 +40,20 @@ public class WebSocketGame extends Game {
 
         @Override
         public void onClose(WebSocket webSocket, int i, String s, boolean b) {
-            System.out.println("ws:" + s);
-
-            // TODO: find out who disconnected and remove them from the game
-            // removePlayer(player);
+            // TODO: find out who disconnected and removePlayer(player);
         }
 
         @Override
         public void onMessage(WebSocket webSocket, String s) {
             System.out.println("ws:" + s);
 
-            Message message = Json.unmarshal(s, Message.class);
-            Token token = message.getToken();
+
+            ClientMessage message = Json.unmarshal(s, ClientMessage.class);
+            if (message == null) {
+                webSocket.send("{'error':'not a valid message'}");
+                return;
+            }
+            Token token = message.parseToken();
             if (token == null) {
                 webSocket.send("{'error':'no token sent'}");
                 return;
@@ -61,43 +64,56 @@ public class WebSocketGame extends Game {
                 return;
             }
             if (message instanceof LoginMessage) {
-                if (!isWaitingForPlayers() || isMember(player)) {
-                    return;
-                }
-                addPlayer(player);
-                // TODO: let other players know that a new player joined
+                handleLoginMessage(webSocket, (LoginMessage) message, player);
             } else if (message instanceof AddLineMessage) {
-                if (!isCurrent(player)) {
-                    webSocket.send("{'error':'not current player'}");
-                    return;
-                }
-                AddLineMessage addLineMessage = (AddLineMessage) message;
-                try {
-                    addLine(addLineMessage.getLine());
-                } catch (ScriptException e) {
-                    webSocket.send(Json.marshal(new ErrorMessage(e.getMessage())));
-                } catch (InterruptedException e) {
-                    webSocket.send(Json.marshal(new ErrorMessage("Script took too long to run")));
-                } catch (GameException e) {
-                    webSocket.send(Json.marshal(new ErrorMessage(e.getMessage())));
-                }
-                if (isSolved()) {
-                    try {
-                        stop();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    return;
-                }
-                // TODO: send new code and result to all players
+                handleAddLineMessage(webSocket, (AddLineMessage) message, player);
             }
+        }
+
+        private void handleLoginMessage(WebSocket webSocket, LoginMessage message, Player player) {
+            if (!isWaitingForPlayers() || isMember(player)) {
+                return;
+            }
+            addPlayer(player);
+            sendToAllPlayers(Json.marshal(new PlayersMessage(getPlayers())));
+        }
+
+        private void handleAddLineMessage(WebSocket webSocket, AddLineMessage message, Player player) {
+            if (!isCurrent(player)) {
+                webSocket.send("{'error':'not current player'}");
+                return;
+            }
+            try {
+                addLine(message.getLine());
+            } catch (ScriptException e) {
+                webSocket.send(Json.marshal(new ErrorMessage(e.getMessage())));
+            } catch (InterruptedException e) {
+                webSocket.send(Json.marshal(new ErrorMessage("Script took too long to run")));
+            } catch (GameException e) {
+                webSocket.send(Json.marshal(new ErrorMessage(e.getMessage())));
+            }
+            if (isSolved()) {
+                try {
+                    stop();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+            sendToAllPlayers(Json.marshal(new CodeAndResultMessage(getCode(), getResult())));
         }
 
         @Override
         public void onError(WebSocket webSocket, Exception e) {
             // TODO: handle this
+        }
+
+        private void sendToAllPlayers(String s) {
+            for (WebSocket ws : connections()) {
+                ws.send(s);
+            }
         }
     }
 

@@ -1,5 +1,6 @@
-package abnormale.knochen.exquisitecode.web.messages;
+package abnormale.knochen.exquisitecode.web.messages.client;
 
+import abnormale.knochen.exquisitecode.web.messages.Message;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -8,9 +9,9 @@ import com.google.gson.JsonParseException;
 
 import java.lang.reflect.Type;
 
-public class MessageDeserializer implements JsonDeserializer<Message> {
+public class ClientMessageDeserializer implements JsonDeserializer<ClientMessage> {
     @Override
-    public Message deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+    public ClientMessage deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
         JsonObject jsonObject = jsonElement.getAsJsonObject();
         JsonElement jsonType = jsonObject.get("type");
         if (jsonType == null) {

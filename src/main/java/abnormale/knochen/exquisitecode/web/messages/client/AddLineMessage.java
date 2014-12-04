@@ -1,6 +1,6 @@
-package abnormale.knochen.exquisitecode.web.messages;
+package abnormale.knochen.exquisitecode.web.messages.client;
 
-public class AddLineMessage extends Message {
+public class AddLineMessage extends ClientMessage {
     private String line;
 
     public AddLineMessage() {

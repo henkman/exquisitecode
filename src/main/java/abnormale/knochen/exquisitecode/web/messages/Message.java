@@ -1,10 +1,16 @@
 package abnormale.knochen.exquisitecode.web.messages;
 
-import abnormale.knochen.exquisitecode.web.Token;
+import abnormale.knochen.exquisitecode.web.messages.client.AddLineMessage;
+import abnormale.knochen.exquisitecode.web.messages.client.ErrorMessage;
+import abnormale.knochen.exquisitecode.web.messages.client.LoginMessage;
+import abnormale.knochen.exquisitecode.web.messages.server.CodeAndResultMessage;
+import abnormale.knochen.exquisitecode.web.messages.server.PlayersMessage;
 
 public abstract class Message {
-    enum Type {
-        ADDLINE(AddLineMessage.class), ERROR(ErrorMessage.class);
+    public enum Type {
+        ADDLINE(AddLineMessage.class), ERROR(ErrorMessage.class),
+        LOGIN(LoginMessage.class), CODEANDRESULT(CodeAndResultMessage.class),
+        PLAYERS(PlayersMessage.class);
 
         private Class clazz;
 
@@ -17,7 +23,6 @@ public abstract class Message {
         }
     }
 
-    protected Token token;
     protected Type type;
 
     public Type getType() {
@@ -26,13 +31,5 @@ public abstract class Message {
 
     public void setType(Type type) {
         this.type = type;
-    }
-
-    public Token getToken() {
-        return token;
-    }
-
-    public void setToken(Token token) {
-        this.token = token;
     }
 }

@@ -1,4 +1,6 @@
-package abnormale.knochen.exquisitecode.web.messages;
+package abnormale.knochen.exquisitecode.web.messages.client;
+
+import abnormale.knochen.exquisitecode.web.messages.Message;
 
 public class ErrorMessage extends Message {
     private String error;

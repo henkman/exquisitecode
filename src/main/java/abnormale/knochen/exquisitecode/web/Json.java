@@ -1,7 +1,7 @@
 package abnormale.knochen.exquisitecode.web;
 
 import abnormale.knochen.exquisitecode.web.messages.Message;
-import abnormale.knochen.exquisitecode.web.messages.MessageDeserializer;
+import abnormale.knochen.exquisitecode.web.messages.client.ClientMessageDeserializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -10,7 +10,7 @@ public class Json {
 
     static {
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(Message.class, new MessageDeserializer());
+        gsonBuilder.registerTypeAdapter(Message.class, new ClientMessageDeserializer());
         gson = gsonBuilder.create();
     }
 

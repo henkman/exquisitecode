@@ -2,11 +2,9 @@ function Game(port) {
 	this.ws = new WebSocket('ws://localhost:'+port);
 	var that = this;
 	this.ws.onopen = function() {
-		console.log('open');
-		that.ws.send('Hello');  // Sends a message.
+		that.ws.send("{'type':'login'}");
 	}
 	this.ws.onmessage = function(e) {
-		// Receives a message.
 		console.log('message', e.data);
 	}
 	this.ws.onclose = function() {

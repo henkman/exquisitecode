@@ -1,6 +1,6 @@
 package abnormale.knochen.exquisitecode.web;
 
-import abnormale.knochen.exquisitecode.web.messages.AddLineMessage;
+import abnormale.knochen.exquisitecode.web.messages.client.AddLineMessage;
 import abnormale.knochen.exquisitecode.web.messages.Message;
 import org.junit.Assert;
 import org.junit.Test;

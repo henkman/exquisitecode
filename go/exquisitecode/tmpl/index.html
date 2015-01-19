@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Exquisite</title>
+</head>
+<body>
+	<ul>
+		{{range .Games}}
+		<li>
+			<a href="/game/{{.Id}}">{{.Task.Description}}</a> - {{.StateString}}
+		</li>
+		{{end}}
+	</ul>
+	<div>
+		<form action="/newgame" method="post">
+			<input type="submit" value="New Game">
+		</form>
+	</div>
+</body>
+</html>

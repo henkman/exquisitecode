@@ -2,11 +2,16 @@ package main
 
 import (
 	"crypto/sha512"
+	"encoding/gob"
 )
 
 type Player struct {
 	Id   uint64
 	Name string
+}
+
+func init() {
+	gob.Register(&Player{})
 }
 
 func GetPlayerByNameAndPassword(name, password string) (*Player, error) {

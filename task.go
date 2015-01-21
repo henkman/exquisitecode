@@ -11,14 +11,9 @@ func (t *Task) IsSolution(result string) bool {
 }
 
 func GetRandomTask() (*Task, error) {
-	/*
-		r := db.QueryRow(`SELECT id, description, solution
-	FROM task
-	ORDER BY RANDOM() LIMIT 1`)
-	*/
 	r := db.QueryRow(`SELECT id, description, solution
 FROM task
-WHERE id=2`)
+ORDER BY RANDOM() LIMIT 1`)
 	task := new(Task)
 	err := r.Scan(&task.Id, &task.Description, &task.Solution)
 	if err != nil {

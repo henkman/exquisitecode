@@ -9,15 +9,19 @@ func TestSimpleGame(t *testing.T) {
 	task := new(Task)
 	task.Id = 0
 	task.Description = "Description"
-	task.ExpectedResult = "correctresult"
+	task.Solution = "correctresult"
 	master := new(Player)
 	master.Id = 0
 	master.Name = "master"
 	other := new(Player)
 	other.Id = 1
 	other.Name = "other"
-	g := NewGame(interp, task, master)
-	err := g.AddPlayer(other)
+	g := NewGameManager().CreateGame(interp, task, master)
+	err := g.AddPlayer(master)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = g.AddPlayer(other)
 	if err != nil {
 		t.Fatal(err)
 	}

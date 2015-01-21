@@ -49,6 +49,10 @@ func (g *Game) RemovePlayer(p *Player) error {
 	l := len(g.Players) - 1
 	g.Players[pi], g.Players[l] = g.Players[l], nil
 	g.Players = g.Players[:l]
+	if len(g.Players) == 0 {
+		g.State = GAME_ENDED
+		return nil
+	}
 	if g.State == GAME_RUNNING && len(g.Players) < 2 {
 		g.State = GAME_ENDED
 		return nil
@@ -130,9 +134,16 @@ func (g *Game) StateString() string {
 }
 
 func (g *Game) current() *Player {
+	if g.CurrentIndex >= len(g.Players) {
+		return nil
+	}
 	return g.Players[g.CurrentIndex]
 }
 
 func (g *Game) nextPlayer() {
+	if len(g.Players) == 0 {
+		g.CurrentIndex = 0
+		return
+	}
 	g.CurrentIndex = (g.CurrentIndex + 1) % len(g.Players)
 }

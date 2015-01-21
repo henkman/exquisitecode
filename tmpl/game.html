@@ -16,22 +16,54 @@
 		};
 	
 	*/
+	var players;
+	var error;
 	var socket;
 	window.onload = function(e) {
+		players = document.getElementById("players");
+		error = document.getElementById("error");
 		socket = new WebSocket("ws://localhost:8080/gamesock/{{.Game.Id}}");
 		socket.onopen = function() {
 			console.log("we are open");
-			// socket.send("ping");
-		}
-		socket.onmessage = function(msg) {
-			console.log(msg);
-			// code.text = code.text + msg;
-			// socket.send("ping");
-		}
+		};
+		socket.onmessage = function(wsmsg) {
+			console.log("got message: " + wsmsg.data);
+			var msg = {};
+			try {
+				msg = JSON.parse(wsmsg.data);
+			} catch(e) {
+				console.log("json parse: ", e);
+			}
+			if(msg.Error) {
+				error.html = msg.Error;
+			} else if(msg.Code && msg.Result) {
+				console.log(msg);
+			} else if(msg.Players && msg.Master && msg.Current) {
+				players.innerHTML = "";
+				for(var i = 0; i < msg.Players.length; i++) {
+					var player = msg.Players[i];
+					var classes = [];
+					if(player == msg.Master) {
+						classes.push("master");
+					}
+					if(player == msg.Current) {
+						classes.push("current");
+					}
+					classes = classes.length>0 ?
+						" class=\""+classes.join(" ")+"\"" :
+						"";
+					players.innerHTML += "<li"+classes+">"+player+"</li>";
+				}
+			} else {
+				console.log("unknown message: " + msg);	
+			}
+		};
 	};
 	function submitAddline(form) {
+		error.innerHTML = "";
 		var line = form["line"].value;
-		socket.send(line);
+		var addline = {"Type":0,"Data":{"Line":line}};
+		socket.send(JSON.stringify(addline));
 		return false;
 	}
 	</script>
@@ -67,12 +99,21 @@
 		.playerlist {
 			padding:8px;
 		}
+		.current {
+			
+		}
+		.master {
+			
+		}
 		.task {
 			padding: 4px;
 			background-color: #670808;
 		}
 		code, #line {
 			width:100%;
+		}
+		#error {
+			color:red;
 		}
 	</style>
 </head>
@@ -87,11 +128,7 @@
 			<hr/>
 			<div class="playerlist">
 				Players:
-				<ul >
-					{{range .Game.Players}}
-					<li>{{.Name}}</li>
-					{{end}}
-				</ul>
+				<ul id="players"></ul>
 			</div>
 			<hr/>
 			<div>
@@ -107,7 +144,9 @@
 				<form name="addline" action="/addline" action="post" onsubmit="return submitAddline(this)">
 					<input type="text" id="line" name="line" value=""/>
 				</form>
+				<div id="error"></div>
 			</div>
+			
 			<div>
 				{{.Game.Result}}
 			</div>

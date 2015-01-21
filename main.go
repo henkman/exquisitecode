@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
 	_ "github.com/mattn/go-sqlite3"
 	"html/template"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
-	"time"
 )
 
 var (
@@ -21,43 +22,8 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
+	cookiestore = sessions.NewCookieStore([]byte("yodawg"))
 )
-
-type GameManager struct {
-	Games     []*WebsocketGame
-	IdCounter int
-}
-
-func NewGameManager() *GameManager {
-	gm := new(GameManager)
-	gm.Games = make([]*WebsocketGame, 0)
-	gm.IdCounter = 0
-	return gm
-}
-
-func (gm *GameManager) CreateGame(interp Interpreter, task *Task, master *Player) *WebsocketGame {
-	g := new(WebsocketGame)
-	g.Game = new(Game)
-	g.Id = gm.IdCounter
-	g.Interp = interp
-	g.Task = task
-	g.Master = master
-	g.State = GAME_WAITING
-	g.Code = interp.PrefixCode()
-	g.Players = []*Player{master}
-	gm.IdCounter++
-	gm.Games = append(gm.Games, g)
-	return g
-}
-
-func (gm *GameManager) GetGameById(id int) *WebsocketGame {
-	for _, game := range gm.Games {
-		if game.Id == id {
-			return game
-		}
-	}
-	return nil
-}
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
@@ -90,21 +56,45 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func gameSockHandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := wsUpgrader.Upgrade(w, r, nil)
+	vars := mux.Vars(r)
+	sid := vars["id"]
+	id, err := strconv.Atoi(sid)
 	if err != nil {
-		log.Println(err)
+		http.NotFound(w, r)
 		return
 	}
-	go func() {
-		for {
-			messageType, p, err := conn.ReadMessage()
-			if err != nil {
-				return
+	game := gm.GetGameById(id)
+	if game == nil {
+		http.NotFound(w, r)
+		return
+	}
+	session, _ := cookiestore.Get(r, "exquisite")
+	player, ok := session.Values["player"].(*Player)
+	if !ok || player == nil {
+		a, _ := GetPlayerByName("a")
+		b, _ := GetPlayerByName("b")
+		c, _ := GetPlayerByName("c")
+		players := []*Player{a, b, c}
+		for _, p := range players {
+			if !game.IsMember(p) {
+				player = p
+				break
 			}
-			time.Sleep(time.Second)
-			conn.WriteMessage(messageType, p)
 		}
-	}()
+		if player == nil {
+			http.NotFound(w, r)
+			return
+		}
+	}
+	conn, err := wsUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if err := <-game.AddPlayer(player, conn); err != nil {
+		return
+	}
+	go game.HandlePlayer(player, conn)
 }
 
 func blah() {
@@ -119,8 +109,8 @@ func blah() {
 		log.Println(err)
 		return
 	}
-	gm.CreateGame(interp, task, master)
-
+	game := gm.CreateGame(interp, task, master)
+	go game.Run()
 }
 
 func newGameHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,6 +119,8 @@ func newGameHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	var err error
 	tmpl, err = template.ParseGlob("./tmpl/*.html")
 	if err != nil {

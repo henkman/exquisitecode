@@ -16,29 +16,57 @@
 		};
 	
 	*/
+	var messagetypes = {
+		"MT_ADDLINE":0,
+		"MT_STARTGAME":1,
+	};
+	var gamestate = {
+		"WAITING":0,
+		"RUNNING":1,
+		"ENDED":2
+	};
 	var players;
 	var error;
 	var socket;
+	var clearerror;
 	window.onload = function(e) {
 		players = document.getElementById("players");
 		error = document.getElementById("error");
 		socket = new WebSocket("ws://localhost:8080/gamesock/{{.Game.Id}}");
-		socket.onopen = function() {
+		socket.onopen = function(openev) {
 			console.log("we are open");
 		};
-		socket.onmessage = function(wsmsg) {
-			console.log("got message: " + wsmsg.data);
+		socket.onerror = function(errorev) {
+			console.log(errorev);
+			error.innerHTML = "socket closed";
+		};
+		socket.onclose = function(closeev) {
+			error.innerHTML = "socket closed";
+		};
+		socket.onmessage = function(msgev) {
+			console.log("got message: " + msgev.data);
 			var msg = {};
 			try {
-				msg = JSON.parse(wsmsg.data);
+				msg = JSON.parse(msgev.data);
 			} catch(e) {
 				console.log("json parse: ", e);
 			}
 			if(msg.Error) {
-				error.html = msg.Error;
+				error.innerHTML = msg.Error;
+				clearerror = window.setTimeout(function() {
+					error.innerHTML = "";
+				}, 3000);
+			} /*else if(msg.State) {
+				if(msg.State == gamestate.RUNNING) {
+					
+				} else if(msg.State == gamestate.ENDED) {
+					
+				} else if(msg.State == gamestate.WAITING) {
+					
+				}
 			} else if(msg.Code && msg.Result) {
 				console.log(msg);
-			} else if(msg.Players && msg.Master && msg.Current) {
+			} */else if(msg.Players && msg.Master && msg.Current) {
 				players.innerHTML = "";
 				for(var i = 0; i < msg.Players.length; i++) {
 					var player = msg.Players[i];
@@ -60,10 +88,22 @@
 		};
 	};
 	function submitAddline(form) {
+		if(clearerror) {
+			window.clearTimeout(clearerror);
+		}
 		error.innerHTML = "";
 		var line = form["line"].value;
-		var addline = {"Type":0,"Data":{"Line":line}};
-		socket.send(JSON.stringify(addline));
+		var msg = {"Type":messagetypes.MT_ADDLINE,"Data":{"Line":line}};
+		socket.send(JSON.stringify(msg));
+		return false;
+	}
+	function submitStartGame(form) {
+		if(clearerror) {
+			window.clearTimeout(clearerror);
+		}
+		error.innerHTML = "";
+		var msg = {"Type":messagetypes.MT_STARTGAME,"Data":{}};
+		socket.send(JSON.stringify(msg));
 		return false;
 	}
 	</script>
@@ -139,17 +179,24 @@
 			<div class="task">
 				{{.Game.Task.Description}}
 			</div>
-			<pre><code class="javascript hljs">{{.Game.Code}}</code></pre>
+			<pre><code class="javascript hljs"></code></pre>
 			<div>
-				<form name="addline" action="/addline" action="post" onsubmit="return submitAddline(this)">
-					<input type="text" id="line" name="line" value=""/>
-				</form>
-				<div id="error"></div>
+				<div id="waiting" style="display:none">
+					<form action="" method="post" onsubmit="return submitStartGame(this)">
+						<input type="submit" name="submit" value="Start Game"/>
+					</form>
+				</div>
+				<div id="running" style="display:none">
+					<form action="" method="post" onsubmit="return submitAddline(this)">
+						<input type="text" id="line" name="line" value=""/>
+					</form>
+				</div>
+				<div id="ended" style="display:none">
+					Game has ended
+				</div>
 			</div>
-			
-			<div>
-				{{.Game.Result}}
-			</div>
+			<div id="error"></div>
+			<div id="result"></div>
 		</div>
 	</div>
 </body>

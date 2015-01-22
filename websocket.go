@@ -11,6 +11,7 @@ type MessageType uint8
 
 const (
 	MT_ADDLINE MessageType = iota
+	MT_STARTGAME
 )
 
 type Message struct {
@@ -38,6 +39,10 @@ type AddPlayerMessage struct {
 	Errors chan error
 }
 
+type StartGameMessage struct {
+	Player *Player
+}
+
 type Error struct {
 	Error string
 }
@@ -57,6 +62,7 @@ type WebsocketGame struct {
 	AddlinesChan     chan PlayerAddlineMessage
 	AddPlayerChan    chan AddPlayerMessage
 	RemovePlayerChan chan RemovePlayerMessage
+	StartGameChan    chan StartGameMessage
 }
 
 func (g *WebsocketGame) Run() {
@@ -70,6 +76,18 @@ func (g *WebsocketGame) Run() {
 				continue
 			}
 			err := g.AddLine(addline.Message.Line)
+			if err != nil {
+				conn.WriteJSON(Error{err.Error()})
+				continue
+			}
+			g.BroadcastGameState()
+		case startgame := <-g.StartGameChan:
+			conn := g.SocketPlayer[startgame.Player]
+			if !g.IsMaster(startgame.Player) {
+				conn.WriteJSON(Error{"you are not the master"})
+				continue
+			}
+			err := g.Start()
 			if err != nil {
 				conn.WriteJSON(Error{err.Error()})
 				continue
@@ -99,11 +117,25 @@ func (g *WebsocketGame) BroadcastGameState() {
 		players[i] = g.Players[i].Name
 	}
 
+	var master string
+	if g.Master == nil {
+		master = ""
+	} else {
+		master = g.Master.Name
+	}
+
+	var current string
+	if g.current() == nil {
+		current = ""
+	} else {
+		current = g.current().Name
+	}
+
 	pm := GameStateMessage{g.Code,
 		g.Result,
 		players,
-		g.Master.Name,
-		g.current().Name,
+		master,
+		current,
 		g.StateString()}
 	for _, conn := range g.SocketPlayer {
 		err := conn.WriteJSON(pm)
@@ -151,6 +183,8 @@ func (g *WebsocketGame) HandlePlayer(p *Player, conn *websocket.Conn) {
 			}
 			addline.Player = p
 			g.AddlinesChan <- addline
+		case MT_STARTGAME:
+			g.StartGameChan <- StartGameMessage{p}
 		default:
 			fmt.Println(err)
 			continue

@@ -31,6 +31,7 @@ func (gm *GameManager) CreateGame(interp Interpreter, task *Task, master *Player
 	g.AddlinesChan = make(chan PlayerAddlineMessage)
 	g.AddPlayerChan = make(chan AddPlayerMessage)
 	g.RemovePlayerChan = make(chan RemovePlayerMessage)
+	g.StartGameChan = make(chan StartGameMessage)
 
 	gm.IdCounter++
 	gm.Games = append(gm.Games, g)

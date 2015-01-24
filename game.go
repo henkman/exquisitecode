@@ -29,12 +29,25 @@ type Game struct {
 	State        GameState
 }
 
+func (g *Game) CanAddPlayer(p *Player) bool {
+	if g.State != GAME_WAITING {
+		return false
+	}
+	if g.IsMember(p) {
+		return false
+	}
+	return true
+}
+
 func (g *Game) AddPlayer(p *Player) error {
 	if g.State != GAME_WAITING {
 		return fmt.Errorf("game is not in waiting state")
 	}
 	if g.IsMember(p) {
 		return fmt.Errorf("already member of game")
+	}
+	if g.Master == nil {
+		g.Master = p
 	}
 	g.Players = append(g.Players, p)
 	return nil

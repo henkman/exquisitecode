@@ -4,6 +4,7 @@
 	<title>Exquisite</title>
 </head>
 <body>
+	{{if .Player}}
 	<ul>
 		{{range .Games}}
 		<li>
@@ -16,5 +17,19 @@
 			<input type="submit" value="New Game">
 		</form>
 	</div>
+	<div>
+		<form action="/logout" method="post">
+			<input type="submit" name="submit" value="Logout"/>
+		</form>
+	</div>
+	{{else}}
+	<div>
+		<form action="/login" method="post">
+			<input type="text" name="name" value="">
+			<input type="password" name="pass" value="">
+			<input type="submit" value="Login">
+		</form>
+	</div>
+	{{end}}
 </body>
 </html>

@@ -2,168 +2,47 @@
 <html>
 <head>
 	<title>Exquisite</title>
+	<link rel="stylesheet" href="/game.css">
 	<link rel="stylesheet" href="/highlight_obsidian.css">
 	<script type="text/javascript" src="/highlight.pack.js"></script>
+	{{if ne .Game.State 2}}
+	<script type="text/javascript" src="/game.js"></script>
 	<script type="text/javascript">
-	/*
-		window.onbeforeunload = function (e) {
-			var message = "You leave the game if you leave this page.",
-			e = e || window.event;
-			if (e) {
-				e.returnValue = message;
-			}
-			return message;
-		};
-	
-	*/
-	var messagetypes = {
-		"MT_ADDLINE":0,
-		"MT_STARTGAME":1,
-	};
-	var gamestate = {
-		"WAITING":0,
-		"RUNNING":1,
-		"ENDED":2
-	};
-	var players;
-	var error;
-	var socket;
-	var clearerror;
-	window.onload = function(e) {
-		players = document.getElementById("players");
-		error = document.getElementById("error");
-		socket = new WebSocket("ws://localhost:8080/gamesock/{{.Game.Id}}");
-		socket.onopen = function(openev) {
-			console.log("we are open");
-		};
-		socket.onerror = function(errorev) {
-			console.log(errorev);
-			error.innerHTML = "socket closed";
-		};
-		socket.onclose = function(closeev) {
-			error.innerHTML = "socket closed";
-		};
-		socket.onmessage = function(msgev) {
-			console.log("got message: " + msgev.data);
-			var msg = {};
-			try {
-				msg = JSON.parse(msgev.data);
-			} catch(e) {
-				console.log("json parse: ", e);
-			}
-			if(msg.Error) {
-				error.innerHTML = msg.Error;
-				clearerror = window.setTimeout(function() {
-					error.innerHTML = "";
-				}, 3000);
-			} /*else if(msg.State) {
-				if(msg.State == gamestate.RUNNING) {
-					
-				} else if(msg.State == gamestate.ENDED) {
-					
-				} else if(msg.State == gamestate.WAITING) {
-					
+		/*
+			window.onbeforeunload = function (e) {
+				var message = "You leave the game if you leave this page.",
+				e = e || window.event;
+				if (e) {
+					e.returnValue = message;
 				}
-			} else if(msg.Code && msg.Result) {
-				console.log(msg);
-			} */else if(msg.Players && msg.Master && msg.Current) {
-				players.innerHTML = "";
-				for(var i = 0; i < msg.Players.length; i++) {
-					var player = msg.Players[i];
-					var classes = [];
-					if(player == msg.Master) {
-						classes.push("master");
-					}
-					if(player == msg.Current) {
-						classes.push("current");
-					}
-					classes = classes.length>0 ?
-						" class=\""+classes.join(" ")+"\"" :
-						"";
-					players.innerHTML += "<li"+classes+">"+player+"</li>";
-				}
-			} else {
-				console.log("unknown message: " + msg);	
-			}
+				return message;
+			};
+		
+		*/
+		window.onload = function(e) {
+			var game = new Game("{{.Player.Name}}", {{.Game.Id}});
+			document.getElementById("startgame").onsubmit = function(form) {
+				game.startGame();
+				return false;
+			};
+			document.getElementById("addline").onsubmit = function(form) {
+				var $line = document.getElementById("line");
+				game.addLine($line.value);
+				$line.value = "";
+				return false;
+			};
 		};
-	};
-	function submitAddline(form) {
-		if(clearerror) {
-			window.clearTimeout(clearerror);
-		}
-		error.innerHTML = "";
-		var line = form["line"].value;
-		var msg = {"Type":messagetypes.MT_ADDLINE,"Data":{"Line":line}};
-		socket.send(JSON.stringify(msg));
-		return false;
-	}
-	function submitStartGame(form) {
-		if(clearerror) {
-			window.clearTimeout(clearerror);
-		}
-		error.innerHTML = "";
-		var msg = {"Type":messagetypes.MT_STARTGAME,"Data":{}};
-		socket.send(JSON.stringify(msg));
-		return false;
-	}
 	</script>
-	<style type="text/css">
-		html, body{
-			height:100%;
-			margin:0;
-		}
-		.game {
-			width: 100%;
-			height:100%;
-			background-color: darkslategrey;	
-			overflow: hidden;
-			color: #e0e2e4;
-		}
-		.left {
-			float: left;
-			background-color:#282b2e;
-			padding-top:4px;
-			padding-left:4px;
-		}
-		.right {
-			overflow:hidden;
-			padding-left:15px;
-			padding-top:30px;
-			margin-right:10px;
-		}
-		.clear:after {
-			content:'';
-    		display:block;
-			clear:both;
-		}
-		.playerlist {
-			padding:8px;
-		}
-		.current {
-			
-		}
-		.master {
-			
-		}
-		.task {
-			padding: 4px;
-			background-color: #670808;
-		}
-		code, #line {
-			width:100%;
-		}
-		#error {
-			color:red;
-		}
-	</style>
+	{{end}}	
 </head>
 <body>
 	<div class="game clear">
 		<div class="left">
 			<div>
-				Logout?<br/>
-				Options?<br/>
-				Back to Index?<br/>
+				<form action="/logout" method="post">
+					<input type="submit" value="logout"/>
+				</form>
+				<a href="/">game browser</a><br/>
 			</div>
 			<hr/>
 			<div class="playerlist">
@@ -179,24 +58,26 @@
 			<div class="task">
 				{{.Game.Task.Description}}
 			</div>
-			<pre><code class="javascript hljs"></code></pre>
+			<pre><code class="javascript hljs">{{if eq .Game.State 2}}{{.Game.Code}}{{end}}</code></pre>
+			<div id="error"></div>
 			<div>
+				{{if ne .Game.State 2}}
 				<div id="waiting" style="display:none">
-					<form action="" method="post" onsubmit="return submitStartGame(this)">
-						<input type="submit" name="submit" value="Start Game"/>
+					<form id="startgame" action="#" method="post">
+						<input type="submit" value="Start Game"/>
 					</form>
 				</div>
 				<div id="running" style="display:none">
-					<form action="" method="post" onsubmit="return submitAddline(this)">
+					<form id="addline" action="#" method="post">
 						<input type="text" id="line" name="line" value=""/>
 					</form>
 				</div>
-				<div id="ended" style="display:none">
+				{{end}}
+				<div id="ended" {{if ne .Game.State 2}}style="display:none"{{end}}>
 					Game has ended
 				</div>
 			</div>
-			<div id="error"></div>
-			<div id="result"></div>
+			<div id="result">{{if eq .Game.State 2}}{{.Game.Result}}{{end}}</div>
 		</div>
 	</div>
 </body>

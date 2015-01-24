@@ -16,13 +16,12 @@ func NewGameManager() *GameManager {
 	return gm
 }
 
-func (gm *GameManager) CreateGame(interp Interpreter, task *Task, master *Player) *WebsocketGame {
+func (gm *GameManager) CreateGame(interp Interpreter, task *Task) *WebsocketGame {
 	g := new(WebsocketGame)
 	g.Game = new(Game)
 	g.Id = gm.IdCounter
 	g.Interp = interp
 	g.Task = task
-	g.Master = master
 	g.State = GAME_WAITING
 	g.Code = interp.PrefixCode()
 	g.Players = []*Player{}

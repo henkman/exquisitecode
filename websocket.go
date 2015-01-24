@@ -14,15 +14,7 @@ const (
 	MT_STARTGAME
 )
 
-type Message struct {
-	Type MessageType
-	Data json.RawMessage
-}
-
-type AddlineMessage struct {
-	Line string
-}
-
+// INTERNAL
 type PlayerAddlineMessage struct {
 	Player  *Player
 	Message AddlineMessage
@@ -39,21 +31,38 @@ type AddPlayerMessage struct {
 	Errors chan error
 }
 
+// FROM CLIENT
+type Message struct {
+	Type MessageType
+	Data json.RawMessage
+}
+
+type AddlineMessage struct {
+	Line string
+}
+
 type StartGameMessage struct {
 	Player *Player
 }
 
+// TO CLIENT
 type Error struct {
 	Error string
 }
 
-type GameStateMessage struct {
-	Code    string
-	Result  string
+type StateMessage struct {
+	State GameState
+}
+
+type CodeResultMessage struct {
+	Code   string
+	Result string
+}
+
+type PlayersMessage struct {
 	Players []string
 	Master  string
 	Current string
-	State   string
 }
 
 type WebsocketGame struct {
@@ -72,76 +81,102 @@ func (g *WebsocketGame) Run() {
 			fmt.Println("addline from player", addline.Player.Name)
 			conn := g.SocketPlayer[addline.Player]
 			if !g.IsCurrent(addline.Player) {
-				conn.WriteJSON(Error{"not your turn"})
+				err := conn.WriteJSON(Error{"not your turn"})
+				if err != nil {
+					conn.Close()
+				}
 				continue
 			}
 			err := g.AddLine(addline.Message.Line)
 			if err != nil {
-				conn.WriteJSON(Error{err.Error()})
+				err := conn.WriteJSON(Error{err.Error()})
+				if err != nil {
+					conn.Close()
+				}
 				continue
 			}
-			g.BroadcastGameState()
+			g.BroadcastCodeResult()
+			g.BroadcastState()
+			if g.State != GAME_ENDED {
+				g.BroadcastPlayers()
+			}
 		case startgame := <-g.StartGameChan:
 			conn := g.SocketPlayer[startgame.Player]
 			if !g.IsMaster(startgame.Player) {
-				conn.WriteJSON(Error{"you are not the master"})
+				err := conn.WriteJSON(Error{"you are not the master"})
+				if err != nil {
+					conn.Close()
+				}
 				continue
 			}
 			err := g.Start()
 			if err != nil {
-				conn.WriteJSON(Error{err.Error()})
+				err := conn.WriteJSON(Error{err.Error()})
+				if err != nil {
+					conn.Close()
+				}
 				continue
 			}
-			g.BroadcastGameState()
+			g.BroadcastState()
 		case addplayer := <-g.AddPlayerChan:
 			g.SocketPlayer[addplayer.Player] = addplayer.Conn
 			err := g.Game.AddPlayer(addplayer.Player)
 			addplayer.Errors <- err
 			if err == nil {
-				g.BroadcastGameState()
+				g.BroadcastPlayers()
 			}
 		case removeplayer := <-g.RemovePlayerChan:
 			delete(g.SocketPlayer, removeplayer.Player)
 			err := g.Game.RemovePlayer(removeplayer.Player)
 			removeplayer.Errors <- err
 			if err == nil {
-				g.BroadcastGameState()
+				g.BroadcastPlayers()
 			}
 		}
 	}
 }
 
-func (g *WebsocketGame) BroadcastGameState() {
+func (g *WebsocketGame) BroadcastPlayers() {
 	players := make([]string, len(g.Players))
 	for i := range players {
 		players[i] = g.Players[i].Name
 	}
-
 	var master string
 	if g.Master == nil {
 		master = ""
 	} else {
 		master = g.Master.Name
 	}
-
 	var current string
 	if g.current() == nil {
 		current = ""
 	} else {
 		current = g.current().Name
 	}
-
-	pm := GameStateMessage{g.Code,
-		g.Result,
+	g.BroadcastMessage(PlayersMessage{
 		players,
 		master,
-		current,
-		g.StateString()}
-	for _, conn := range g.SocketPlayer {
-		err := conn.WriteJSON(pm)
+		current})
+}
+
+func (g *WebsocketGame) BroadcastState() {
+	g.BroadcastMessage(StateMessage{g.State})
+}
+
+func (g *WebsocketGame) BroadcastCodeResult() {
+	g.BroadcastMessage(CodeResultMessage{g.Code, g.Result})
+}
+
+func (g *WebsocketGame) BroadcastMessage(msg interface{}) {
+	tokill := make([]*Player, 0)
+	for player, conn := range g.SocketPlayer {
+		err := conn.WriteJSON(msg)
 		if err != nil {
-			fmt.Println(err)
+			tokill = append(tokill, player)
 		}
+	}
+	for _, player := range tokill {
+		g.RemovePlayer(player)
 	}
 }
 
@@ -164,6 +199,8 @@ func (g *WebsocketGame) RemovePlayer(p *Player) chan error {
 }
 
 func (g *WebsocketGame) HandlePlayer(p *Player, conn *websocket.Conn) {
+	conn.WriteJSON(CodeResultMessage{g.Code, g.Result})
+	conn.WriteJSON(StateMessage{g.State})
 	for g.State != GAME_ENDED {
 		var msg Message
 		err := conn.ReadJSON(&msg)
@@ -186,7 +223,6 @@ func (g *WebsocketGame) HandlePlayer(p *Player, conn *websocket.Conn) {
 		case MT_STARTGAME:
 			g.StartGameChan <- StartGameMessage{p}
 		default:
-			fmt.Println(err)
 			continue
 		}
 	}

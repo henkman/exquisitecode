@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
 	_ "github.com/mattn/go-sqlite3"
@@ -22,16 +23,52 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-	cookiestore = sessions.NewCookieStore([]byte("yodawg"))
+	cookiestore = sessions.NewCookieStore(securecookie.GenerateRandomKey(32))
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
+	session, err := cookiestore.Get(r, "exquisite")
+	var player *Player
+	if err == nil {
+		p, ok := session.Values["player"].(*Player)
+		if ok && p != nil {
+			player = p
+		}
+	}
+
 	tmpl.ExecuteTemplate(w, "index.html", struct {
-		Games []*WebsocketGame
+		Games  []*WebsocketGame
+		Player *Player
 	}{
 		gm.Games,
+		player,
 	})
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	session, _ := cookiestore.Get(r, "exquisite")
+	session.Options = &sessions.Options{MaxAge: -1}
+	session.Save(r, w)
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	pass := r.FormValue("pass")
+	if name == "" || pass == "" {
+		http.Error(w, "no credentials specified", http.StatusUnauthorized)
+		return
+	}
+	session, _ := cookiestore.Get(r, "exquisite")
+	player, err := GetPlayerByNameAndPassword(name, pass)
+	if err != nil {
+		http.Error(w, "bad credentials", http.StatusUnauthorized)
+		return
+	}
+	session.Values["player"] = player
+	session.Save(r, w)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func gameHandler(w http.ResponseWriter, r *http.Request) {
@@ -47,11 +84,23 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	session, err := cookiestore.Get(r, "exquisite")
+	if err != nil {
+		http.Redirect(w, r, "/", http.StatusUnauthorized)
+		return
+	}
+	player, ok := session.Values["player"].(*Player)
+	if !ok || player == nil {
+		http.Redirect(w, r, "/", http.StatusUnauthorized)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html")
 	tmpl.ExecuteTemplate(w, "game.html", struct {
-		Game *WebsocketGame
+		Game   *WebsocketGame
+		Player *Player
 	}{
 		game,
+		player,
 	})
 }
 
@@ -71,20 +120,12 @@ func gameSockHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := cookiestore.Get(r, "exquisite")
 	player, ok := session.Values["player"].(*Player)
 	if !ok || player == nil {
-		a, _ := GetPlayerByName("a")
-		b, _ := GetPlayerByName("b")
-		c, _ := GetPlayerByName("c")
-		players := []*Player{a, b, c}
-		for _, p := range players {
-			if !game.IsMember(p) {
-				player = p
-				break
-			}
-		}
-		if player == nil {
-			http.NotFound(w, r)
-			return
-		}
+		http.Error(w, "invalid session", http.StatusUnauthorized)
+		return
+	}
+	if !game.CanAddPlayer(player) {
+		http.Error(w, "invalid session", http.StatusUnauthorized)
+		return
 	}
 	conn, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -104,12 +145,7 @@ func blah() {
 		log.Println(err)
 		return
 	}
-	master, err := GetPlayerByName("a")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	game := gm.CreateGame(interp, task, master)
+	game := gm.CreateGame(interp, task)
 	go game.Run()
 }
 
@@ -142,6 +178,8 @@ func main() {
 	get.PathPrefix("/").Handler(http.FileServer(http.Dir("./htdocs/")))
 	post := r.Methods("POST").Subrouter()
 	post.HandleFunc("/newgame", newGameHandler)
+	post.HandleFunc("/login", loginHandler)
+	post.HandleFunc("/logout", logoutHandler)
 	http.Handle("/", r)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
